@@ -1,0 +1,36 @@
+######Fit GRM models by Sex then test if slopes and intercepts can be equated
+#####The df RSf1items contains 7 columns: rs1-rs7###
+
+model_conf_sex_grm <- multipleGroup(RSf1items, 1, group=RS$sex, itemtype="graded", method = 'MHRM')
+summary(model_conf_sex_grm)
+coef(model_conf_sex_grm, IRT = T)
+itemfit(model_conf_sex_grm, fit_stats = "S_X2")
+
+model_metric_sex_grm <- multipleGroup(
+  data = RSf1items,             
+  model = 1,
+  group = RS$sex,
+  itemtype = "graded",             
+  invariance = "slopes",
+  method = 'MHRM'
+)
+
+coef(model_metric_sex, IRT = T)
+itemfit(model_metric_sex, fit_stats = "S_X2")
+
+model_scalar_sex_grm <- multipleGroup(
+  data = RSf1items,             
+  model = 1,
+  group = RS$sex,
+  itemtype = "graded",            
+  invariance = c("slopes", "intercepts"),
+  method = 'MHRM'
+)
+
+anova(model_scalar_sex_grm, model_metric_sex_grm, model_conf_sex_grm)
+#anova(model_scalar_sex_grm, model_metric_sex_grm, model_conf_sex_grm)
+                          AIC    SABIC       HQ      BIC    logLik     X2 df     p
+#model_scalar_sex_grm 13981.29 14043.31 14046.99 14154.47 -6955.647                
+#model_metric_sex_grm 13989.12 14100.75 14107.37 14300.84 -6931.561 48.173 28  0.01
+#model_conf_sex_grm   13985.40 14109.42 14116.78 14331.75 -6922.699 17.724  7 0.013
+#No metric invariance, No scalar invariance with a Graded Response
