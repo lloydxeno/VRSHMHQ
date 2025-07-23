@@ -1,0 +1,56 @@
+import excel "\\cabinet.usask.ca\work$\llb296\My Documents\Students\Carley\PhD\RS survey\April 14 RS general population data full cbye.xlsx", sheet("Gen_pop full raw") firstrow allstring
+save "\\cabinet.usask.ca\work$\llb296\My Documents\Students\Carley\PhD\RS survey\RS_validation.dta"
+
+//drop the excludes
+drop if inclusion=="exclude"
+
+//fix the names of Gina's scale
+renvars sshrc_scale1_arm1- sshrc_scale15_arm1, subst(sshrc_scale rs)
+renvars rs1_arm1- rs15_arm1, postdrop(5)
+
+//Set the values to numeric
+foreach var of varlist rs1- rs15{
+	destring `var', replace
+}
+
+
+//Now rename RSIPAS
+renvars rsipas_ca_1_arm1- rsipas_ca_10_arm1, postdrop(5)
+renvars rsipas_ca_1- rsipas_ca_10, subst(_ca_ )
+
+//Convert to numeric
+foreach var of varlist rsipas1- rsipas10{
+	destring `var', replace
+}
+
+
+//drop the observations with missing values
+egen count_miss = rmiss(rs1- rs15 rsipas1- rsipas10) 
+
+//The above shows 44 people have at list 1 missing
+
+keep if count_miss==0 //1,056 remaining
+
+//Destring age and label
+
+destring sshrc_age_arm1, replace
+
+ren sshrc_age_arm1 age
+lab def edad 1"18-24" 2"25-34" 3"35-44" 4"45-54" 5"55-64" 6"65-74" 7"75+"
+lab values age edad
+
+lab def edadcol 1"18-24" 2"25-34" 3"35-44" 4"45-54" 5"55-64" 6"65+"
+recode age (6/7=6), gen(age_cat)
+
+lab values age_cat edadcol
+
+//Work on sex
+ren sshrc_sex_arm1 sex
+destring sex, replace
+recode sex (1=1) (2=0) (else=.), gen(male)
+
+//drop if sex is missing
+drop if male==.
+
+keep recordid rs1- rs15 rsipas1- rsipas10 age_cat male
+save "\\cabinet.usask.ca\work$\llb296\My Documents\Students\Carley\PhD\RS survey\RS_validation_minimal.dta"
