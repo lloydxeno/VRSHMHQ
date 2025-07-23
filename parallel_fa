@@ -1,0 +1,40 @@
+****************************************************************************************************
+//Now do parallel analysis in Stata
+*****************************************************************************************************
+ssc install polychoric
+use "\\cabinet.usask.ca\work$\llb296\My Documents\Students\Carley\PhD\RS survey\RS_validation_minimal.dta"
+//Now calculate polychoric correlations
+polychoric rs1- rs15
+//Save the matrix
+matrix rsMat = r(R)
+//Here's Horn's parallel analysis
+paran, mat(rsMat) all graph centile(95) n(1041) color iter(1000) seed(123)
+
+//Extract 2 factors
+factor rs1-rs15, factors(2) blanks(.4)
+**************************************************************************************************
+*Re-do parallel analysis and EFA after dropping rs8 and rs9
+**************************************************************************************************
+polychoric rs1 rs2 rs3 rs4 rs5 rs6 rs7 rs10 rs11 rs12 rs13 rs14 rs15
+matrix rsMat = r(R)
+
+paran, mat(rsMat) all graph centile(95) n(1041) color iter(1000) seed(123)
+
+factor rs1 rs2 rs3 rs4 rs5 rs6 rs7 rs10 rs11 rs12 rs13 rs14 rs15, factors(2) blanks(.4)
+//clear previous rotation results
+rotate, clear
+//Rotate for easier interpretation
+rotate, oblique oblimin blanks(.4)
+//Inspect the factor correlation matrix
+mat fc =  e(r_Phi) 
+mat list fc
+
+/*
+symmetric fc[2,2]
+           Factor1    Factor2
+Factor1          1
+Factor2  .70812953          1
+*/
+
+//Now calculate the internal consistency
+alpha rs1 
