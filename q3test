@@ -1,0 +1,67 @@
+library(mirt)
+#library(haven)
+library(dplyr)
+#The first part of the analysis was done in Stata
+#See the file Analysis_results_part_1
+
+setwd("~/Students/Carley/PhD/RS survey")
+#RS <- read_dta("RS_validation_minimal.dta")
+
+load("validation_gof_f1.RData")
+
+RS <-zap_formats(RS)
+RS <-zap_labels(RS)
+RS <-zap_label(RS)
+
+#Omit #8 MH negatively affected by RS and #9 Suicidal Due to RS
+RS13items <- RS %>% select(c(rs1, rs2, rs3, rs4, rs5, rs6, rs7, rs10, rs11, rs12, rs13, rs14, rs15))
+
+#Now test the 13 items for local independence
+# Effects of local item dependence on the fit and equating performance of the three-parameter logistic model.
+# Applied Psychological Measurement, 8(2), 125–145.
+
+bifact_13 <- "
+F1 = rs1, rs2, rs3, rs4, rs5, rs6, rs7
+F2 = rs10, rs11, rs12, rs13, rs14, rs15
+"
+
+RSVMH13_2f <- mirt(RS13items, bifact_13, itemtype = "graded")
+
+# Compute Q3 residual correlations
+q3_rsvmh13_2f <- mirt::residuals(RSVMH13_2f, type = "Q3")
+
+#Calculate adjusted Q3
+#Residuals > 0.20 or 0.30 are possibly locally dependent
+q3_offdiag <- q3_rsvmh13_2f[lower.tri(q3_rsvmh13_2f)]
+mean_q3 <- mean(q3_offdiag, na.rm = TRUE)
+q3_adj <- q3_rsvmh13_2f - mean_q3
+
+#Display possibly locally dependent items
+q3_display <- ifelse(q3_adj > 0.2, round(q3_adj, 3), NA)
+
+#########Items 10 and 11 and 14 and 15 exceed 0.2
+
+RS11items <- RS13items %>% select(-c(rs11, rs15))
+
+bifact_11 <- "
+F1 = rs1, rs2, rs3, rs4, rs5, rs6, rs7
+F2 = rs10, rs12, rs13, rs14
+"
+bifact_11_model <- mirt.model(bifact_11)
+
+RSVMH11_2f <- mirt(RS11items, bifact_11_model, itemtype = "graded")
+
+# Compute Q3 residual correlations
+q3_rsvmh11_2f <- mirt::residuals(RSVMH11_2f, type = "Q3")
+
+#Calculate adjusted Q3
+#Residuals > 0.20 or 0.30 are possibly locally dependent
+q3_offdiag <- q3_rsvmh11_2f[lower.tri(q3_rsvmh11_2f)]
+mean_q3 <- mean(q3_offdiag, na.rm = TRUE)
+q3_adj <- q3_rsvmh11_2f - mean_q3
+
+#Display possibly locally dependent items
+q3_display <- ifelse(q3_adj > 0.2, round(q3_adj, 3), NA)
+
+#Okay No more locally dependent items after removing #11 and #15
+
